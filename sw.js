@@ -3,7 +3,7 @@ const CACHE_NAME = 'rmch-hub-v1';
 const urlsToCache = [
   './',
   './index.html',
-  '/logo.png'
+  'logo.png'
   // Add other critical assets if known, otherwise the runtime cache handles them
 ];
 

@@ -2,18 +2,19 @@
   "name": "RMCH Student Hub",
   "short_name": "RMCH Hub",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
   "description": "A comprehensive student utility app featuring attendance tracking, digital library, and social confessions.",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "logo.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/logo.png",
+      "src": "logo.png",
       "sizes": "512x512",
       "type": "image/png"
     }

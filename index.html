@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -6,7 +7,7 @@
     <title>RMCH Student Hub</title>
     
     <!-- PWA Settings -->
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
     
@@ -14,8 +15,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RMCH Hub">
-    <link rel="apple-touch-icon" href="./logo.png">
-    <link rel="icon" type="image/png" href="./logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -102,12 +103,25 @@
         --mask-gradient-b: linear-gradient(to top, #f0f9ff, rgba(240, 249, 255, 0.8), transparent);
       }
 
+      /* View Transitions API (Modern Crossfade) */
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation-duration: 0.6s;
+        animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+
+      /* Smooth color transitions for all elements (Fallback) */
+      *, *::before, *::after {
+         transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+         transition-duration: 0.4s;
+         transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
       body {
         font-family: 'Inter', sans-serif;
         background-color: var(--bg-color);
         color: var(--text-primary);
         overflow-x: hidden;
-        transition: background-color 0.5s ease, color 0.5s ease;
       }
       
       /* Ambient Background Blobs */
@@ -120,7 +134,7 @@
         z-index: -1;
         overflow: hidden;
         background: var(--bg-color);
-        transition: background-color 0.5s ease;
+        /* No transition here to let View Transition handle the crossfade smoothly */
       }
       .blob {
         position: absolute;
@@ -128,7 +142,6 @@
         opacity: 0.6;
         border-radius: 50%;
         animation: float 20s infinite ease-in-out;
-        transition: background-color 0.5s ease;
       }
       .blob-1 {
         top: -10%;
@@ -190,7 +203,7 @@
             inset 0 1px 0 0 var(--glass-highlight),       /* Top Specular Highlight */
             inset 0 0 20px 0 rgba(255,255,255,0.02);      /* Inner Volume Glow */
             
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smooth fluid transition */
+        /* Transition handled by global rule now */
       }
       
       .glass:hover {
@@ -210,7 +223,6 @@
         box-shadow: 
             0 15px 40px -10px rgba(0, 0, 0, 0.2),
             inset 0 1px 0 0 var(--glass-highlight);
-        transition: all 0.3s ease;
       }
 
       /* Helper for gradient masks in layout */
@@ -240,15 +252,15 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.85.0",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.84.0"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
-  <script type="module" crossorigin src="./assets/index-CzHW0YVk.js"></script>
+  <script type="module" crossorigin src="./assets/index-B5oMPcho.js"></script>
 </head>
   <body>
     <div class="ambient-light">
@@ -260,8 +272,9 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW Registered', reg))
+          // Explicitly set scope to './' to work in subdirectories like GitHub Pages
+          navigator.serviceWorker.register('sw.js', { scope: './' })
+            .then(reg => console.log('SW Registered'))
             .catch(err => console.log('SW Failed', err));
         });
       }
