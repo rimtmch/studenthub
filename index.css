@@ -70,9 +70,7 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   overflow-x: hidden;
-  /* Force hardware acceleration for the main viewport layer */
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
+  min-height: 100vh;
 }
 
 /* Ambient Background Blobs (Optimized for 90/120/165Hz screens) */
