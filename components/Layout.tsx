@@ -54,10 +54,10 @@ const Layout: React.FC<LayoutProps> = ({ children, onLogout, user, logoUrl, togg
             <Link to="/" className="flex items-center gap-3 group">
               <div className="relative">
                 <img 
-                    src={logoUrl || "/logo.png"} 
+                    src={logoUrl || "logo.png"} 
                     alt="Logo" 
                     className="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-white/30 shadow-lg group-hover:scale-110 transition duration-500"
-                    onError={(e) => { e.currentTarget.src = "/logo.png" }}
+                    onError={(e) => { e.currentTarget.src = "logo.png" }}
                 />
                 <div className="absolute inset-0 rounded-full bg-blue-500/30 blur-lg opacity-0 group-hover:opacity-100 transition duration-700"></div>
               </div>

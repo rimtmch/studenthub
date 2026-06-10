@@ -332,10 +332,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl }) => {
             <div className="relative inline-block group cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 blur-2xl opacity-40 group-hover:opacity-60 transition duration-700 rounded-full animate-pulse-slow"></div>
                 <img 
-                    src={logoUrl || "/logo.png"} 
+                    src={logoUrl || "logo.png"} 
                     alt="Logo" 
                     className="w-32 h-32 rounded-[2.5rem] mx-auto mb-6 object-cover border-4 border-white/10 shadow-2xl relative z-10 transform group-hover:scale-105 transition duration-500"
-                    onError={(e) => { e.currentTarget.src = "/logo.png" }}
+                    onError={(e) => { e.currentTarget.src = "logo.png" }}
                 />
             </div>
           <h2 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight drop-shadow-sm">Welcome Back</h2>
