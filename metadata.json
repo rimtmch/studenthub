@@ -1,0 +1,8 @@
+{
+  "name": "RMCH Student Hub",
+  "description": "A comprehensive student utility app featuring attendance tracking, digital library, peer-to-peer book sharing, and social confessions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
