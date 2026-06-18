@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import Home from '../pages/Home';
-import Attendance from '../pages/Attendance';
-import Library from '../pages/Library';
-import Social from '../pages/Social';
-import Profile from '../pages/Profile';
-import BookRenting from '../pages/BookRenting';
 import { UserProfile, Subject } from '../types';
+
+// Lazy loaded pages for performance optimization
+const Home = React.lazy(() => import('../pages/Home'));
+const Attendance = React.lazy(() => import('../pages/Attendance'));
+const Library = React.lazy(() => import('../pages/Library'));
+const Social = React.lazy(() => import('../pages/Social'));
+const Profile = React.lazy(() => import('../pages/Profile'));
+const BookRenting = React.lazy(() => import('../pages/BookRenting'));
 
 interface AnimatedRoutesProps {
   user: UserProfile;
@@ -19,14 +21,21 @@ interface AnimatedRoutesProps {
 
 const PageWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -15 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-    >
-      {children}
-    </motion.div>
+    <Suspense fallback={
+      <div className="flex justify-center py-20 w-full h-full items-center">
+        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+        className="w-full h-full"
+      >
+        {children}
+      </motion.div>
+    </Suspense>
   );
 };
 

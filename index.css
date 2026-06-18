@@ -86,7 +86,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Ambient Background Blobs (Optimized for 90/120/165Hz screens) */
+/* Ambient Background Blobs (Heavily Optimized for low-end devices) */
 .ambient-light {
   position: fixed;
   inset: 0;
@@ -94,55 +94,41 @@ body {
   height: 100%;
   z-index: -1;
   overflow: hidden;
-  background: var(--bg-color);
-  /* Enforce composite layer promotion for layout integrity */
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
-  backface-visibility: hidden;
+  background-color: var(--bg-color);
 }
 .blob {
   position: absolute;
-  filter: blur(100px);
-  opacity: 0.6;
   border-radius: 50%;
-  animation: float 20s infinite ease-in-out;
-  /* Offload composite changes of heavy background blur to the GPU */
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
+  /* Replaced expensive filter: blur() with radial gradients and reduced opacity */
+  opacity: 0.3;
+  pointer-events: none;
+  /* Removed animation: float for performance */
+  /* Remove will-change since it's no longer animated to save VRAM */
 }
 .blob-1 {
   top: -10%;
   left: -10%;
   width: 60vw;
   height: 60vw;
-  background: var(--blob-1);
-  animation-delay: 0s;
+  background: radial-gradient(circle at center, var(--blob-1) 0%, transparent 70%);
 }
 .blob-2 {
   bottom: -10%;
   right: -10%;
   width: 60vw;
   height: 60vw;
-  background: var(--blob-2);
-  animation-delay: -5s;
+  background: radial-gradient(circle at center, var(--blob-2) 0%, transparent 70%);
 }
 .blob-3 {
   top: 40%;
   left: 30%;
   width: 45vw;
   height: 45vw;
-  background: var(--blob-3);
-  opacity: 0.5;
-  animation-delay: -10s;
+  background: radial-gradient(circle at center, var(--blob-3) 0%, transparent 70%);
+  opacity: 0.2;
 }
 
-@keyframes float {
-  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
-  33% { transform: translate3d(30px, -50px, 0) scale(1.1) rotate(10deg); }
-  66% { transform: translate3d(-20px, 20px, 0) scale(0.9) rotate(-5deg); }
-  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
-}
+/* Removed float animation to prevent continuous layouts/repaints and battery drain */
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 5px; }
@@ -159,9 +145,9 @@ body {
 .glass {
   background: var(--glass-surface);
   
-  /* The Secret Sauce for Liquid Effect */
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  /* Optimized glass effect for low-end devices */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   
   border: 1px solid var(--glass-border);
   
@@ -170,33 +156,25 @@ body {
       var(--glass-shadow),
       inset 0 1px 0 0 var(--glass-highlight),       /* Top Specular Highlight */
       inset 0 0 20px 0 rgba(255,255,255,0.02);      /* Inner Volume Glow */
-      
-  /* Elevate composite layer to isolate expensive backdrop filters during scroll & high refresh rates */
-  transform: translate3d(0, 0, 0);
-  will-change: transform, box-shadow;
-  backface-visibility: hidden;
 }
 
 .glass:hover {
   box-shadow: 
       0 20px 50px -10px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 0 rgba(255,255,255, 0.3);
-  transform: translate3d(0, -3px, 0) scale(1.005);
+  transform: translateY(-2px);
   border-color: rgba(255,255,255, 0.25);
 }
 
 /* Heavier glass for modals/headers */
 .glass-heavy {
   background: var(--glass-heavy-bg);
-  backdrop-filter: blur(50px) saturate(200%);
-  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   box-shadow: 
       0 15px 40px -10px rgba(0, 0, 0, 0.2),
       inset 0 1px 0 0 var(--glass-highlight);
-  transform: translate3d(0, 0, 0);
-  will-change: transform, opacity;
-  backface-visibility: hidden;
 }
 
 /* Helper for gradient masks in layout */

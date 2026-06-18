@@ -61,13 +61,40 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      // Always fetch requests for my listings for the badges and inline requests in 'my-listings'
+      const { data: reqsForMe } = await supabase
+        .from('book_requests')
+        .select(`*, listing:book_listings!inner(*), requester:profiles!requester_username(fullname, avatar_data)`)
+        .eq('book_listings.lister_username', user.username)
+        .order('created_at', { ascending: false });
+        
+      if (reqsForMe) {
+        setRequestsForMe(reqsForMe.map((req: any) => ({
+          ...req,
+          requester: req.requester ? {
+            fullname: req.requester.fullname,
+            avatar: req.requester.avatar_data
+          } : undefined
+        })));
+      } else {
+        setRequestsForMe([]);
+      }
+
       if (activeTab === 'browse') {
         const { data } = await supabase
           .from('book_listings')
-          .select(`*, profiles!lister_username(fullname, avatar)`)
+          .select(`*, lister:profiles!lister_username(fullname, avatar_data)`)
           .neq('lister_username', user.username)
           .order('created_at', { ascending: false });
-        if (data) setListings(data);
+        if (data) {
+          setListings(data.map((item: any) => ({
+            ...item,
+            lister: item.lister ? {
+              fullname: item.lister.fullname,
+              avatar: item.lister.avatar_data
+            } : undefined
+          })));
+        }
       } else if (activeTab === 'my-listings') {
         const { data } = await supabase
           .from('book_listings')
@@ -79,18 +106,21 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
         // Fetch My Requests
         const { data: myReqs } = await supabase
           .from('book_requests')
-          .select(`*, listing:book_listings(*, lister:profiles!lister_username(fullname, avatar))`)
+          .select(`*, listing:book_listings(*, lister:profiles!lister_username(fullname, avatar_data))`)
           .eq('requester_username', user.username)
           .order('created_at', { ascending: false });
-        if (myReqs) setMyRequests(myReqs);
-
-        // Fetch Requests for My Listings
-        const { data: reqsForMe } = await supabase
-          .from('book_requests')
-          .select(`*, listing:book_listings!inner(*), requester:profiles!requester_username(fullname, avatar)`)
-          .eq('book_listings.lister_username', user.username)
-          .order('created_at', { ascending: false });
-        if (reqsForMe) setRequestsForMe(reqsForMe);
+        if (myReqs) {
+          setMyRequests(myReqs.map((req: any) => ({
+            ...req,
+            listing: req.listing ? {
+              ...req.listing,
+              lister: req.listing.lister ? {
+                fullname: req.listing.lister.fullname,
+                avatar: req.listing.lister.avatar_data
+              } : undefined
+            } : undefined
+          })));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -190,7 +220,7 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
 
   const handleUpdateRequestStatus = async (requestId: string, status: 'accepted' | 'rejected') => {
     try {
-      setUpdatingRequestId(requestId);
+      setUpdatingRequestId(requestId + '_' + status);
       const { error } = await supabase.from('book_requests').update({ status }).eq('id', requestId);
       if (error) {
         console.error("Error updating request status:", error);
@@ -280,32 +310,56 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
       
       {/* Header & Tabs */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-            <Store className="w-8 h-8 text-blue-500" />
-            Book Market
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Rent books directly from peers.</p>
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+              <Store className="w-8 h-8 text-blue-500" />
+              Book Market
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Rent books directly from peers.</p>
+          </div>
+          
+          <button 
+            onClick={fetchData} 
+            disabled={isLoading}
+            className="md:hidden p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition"
+            title="Refresh Data"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isLoading ? "animate-spin" : ""}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          </button>
         </div>
         
-        <div className="flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-full w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex bg-slate-200/50 dark:bg-white/5 p-1 rounded-full w-full md:w-auto relative">
+            <button 
+              onClick={() => setActiveTab('browse')} 
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition ${activeTab === 'browse' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-amber-50'}`}
+            >
+              Browse
+            </button>
+            <button 
+              onClick={() => setActiveTab('my-listings')} 
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition ${activeTab === 'my-listings' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-amber-50'}`}
+            >
+              My Listings
+              {requestsForMe.filter(r => r.status === 'pending').length > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">{requestsForMe.filter(r => r.status === 'pending').length}</span>
+              )}
+            </button>
+            <button 
+              onClick={() => setActiveTab('requests')} 
+              className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition ${activeTab === 'requests' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-amber-50'}`}
+            >
+              Requests
+            </button>
+          </div>
           <button 
-            onClick={() => setActiveTab('browse')} 
-            className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition ${activeTab === 'browse' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-amber-50'}`}
+            onClick={fetchData} 
+            disabled={isLoading}
+            className="hidden md:flex p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition"
+            title="Refresh Data"
           >
-            Browse
-          </button>
-          <button 
-            onClick={() => setActiveTab('my-listings')} 
-            className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition ${activeTab === 'my-listings' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-amber-50'}`}
-          >
-            My Listings
-          </button>
-          <button 
-            onClick={() => setActiveTab('requests')} 
-            className={`flex-1 md:flex-none px-6 py-2 rounded-full text-sm font-semibold transition ${activeTab === 'requests' ? 'bg-white dark:bg-white/10 shadow-sm text-slate-900 dark:text-white' : 'text-slate-500 hover:text-slate-800 dark:hover:text-amber-50'}`}
-          >
-            Requests
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isLoading ? "animate-spin" : ""}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           </button>
         </div>
       </div>
@@ -341,7 +395,15 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
                       </div>
                     </div>
                     <button 
-                      onClick={() => { setSelectedListing(listing); setIsRequestModalOpen(true); }}
+                      onClick={() => { 
+                        setSelectedListing(listing); 
+                        setRequestData({
+                          requested_price: listing.price,
+                          price_type: listing.price_type,
+                          message: ''
+                        });
+                        setIsRequestModalOpen(true); 
+                      }}
                       className="w-full bg-blue-50 dark:bg-white/5 hover:bg-blue-100 dark:hover:bg-white/10 text-blue-600 dark:text-white text-sm font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
                     >
                       Request to Rent <ArrowRight className="w-4 h-4" />
@@ -366,21 +428,72 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {listings.map(listing => (
-                  <div key={listing.id} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm opacity-90">
-                    <div className="flex justify-between items-start mb-2">
-                       <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-2">{listing.title}</h3>
-                       <span className="bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
-                         ₹{listing.price}/{listing.price_type}
-                       </span>
-                    </div>
-                    <div className="text-sm text-slate-500 mb-4">{listing.condition} Condition</div>
-                    {listing.upi_id && (
-                      <div className="bg-slate-50 dark:bg-black/20 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-400 break-all border border-slate-100 dark:border-white/5">
-                        UPI: <span className="font-mono">{listing.upi_id}</span>
+                {listings.map(listing => {
+                  const listingRequests = requestsForMe.filter(r => r.listing_id === listing.id);
+                  
+                  return (
+                  <div key={listing.id} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-sm opacity-90">
+                    <div className="p-5 flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                         <h3 className="font-bold text-lg text-slate-900 dark:text-white line-clamp-2">{listing.title}</h3>
+                         <span className="bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+                           ₹{listing.price}/{listing.price_type}
+                         </span>
                       </div>
-                    )}
-                    <div className="mt-4 flex justify-end pt-3 border-t border-slate-100 dark:border-white/5">
+                      <div className="text-sm text-slate-500 mb-4">{listing.condition} Condition</div>
+                      {listing.upi_id && (
+                        <div className="bg-slate-50 dark:bg-black/20 rounded-xl p-3 text-xs text-slate-600 dark:text-slate-400 break-all border border-slate-100 dark:border-white/5">
+                          UPI: <span className="font-mono">{listing.upi_id}</span>
+                        </div>
+                      )}
+                      
+                      {listingRequests.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Requests ({listingRequests.length})</h4>
+                          {listingRequests.map(req => (
+                            <div key={req.id} className="bg-blue-50/50 dark:bg-black/30 border border-blue-100 dark:border-white/5 rounded-xl p-3">
+                              <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center shrink-0 overflow-hidden">
+                                     {req.requester?.avatar ? <img src={req.requester.avatar} className="object-cover w-full h-full"/> : <span className="text-[10px]">{req.requester?.fullname?.charAt(0)}</span>}
+                                  </div>
+                                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{req.requester?.fullname || req.requester_username}</span>
+                                </div>
+                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                  req.status === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' :
+                                  req.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' :
+                                  'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                                }`}>
+                                  {req.status}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 mb-2">
+                                Offered: <strong className="text-slate-900 dark:text-white">₹{req.requested_price} / {req.price_type}</strong>
+                              </div>
+                              {req.status === 'pending' && (
+                                <div className="flex gap-2 mt-2">
+                                  <button 
+                                    onClick={() => handleUpdateRequestStatus(req.id, 'accepted')} 
+                                    disabled={updatingRequestId !== null}
+                                    className="flex-1 bg-green-500 text-white hover:bg-green-600 active:scale-95 disabled:opacity-50 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex justify-center"
+                                  >
+                                    {updatingRequestId === req.id + '_accepted' ? '...' : 'Accept'}
+                                  </button>
+                                  <button 
+                                    onClick={() => handleUpdateRequestStatus(req.id, 'rejected')} 
+                                    disabled={updatingRequestId !== null}
+                                    className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 active:scale-95 disabled:opacity-50 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex justify-center"
+                                  >
+                                    {updatingRequestId === req.id + '_rejected' ? '...' : 'Reject'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="bg-slate-50 dark:bg-black/20 p-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
                       <button
                         onClick={() => { setDeleteError(''); setListingToDelete(listing); }}
                         className="text-xs font-semibold text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1.5 transition py-1 px-2 rounded-lg hover:bg-red-500/10 cursor-pointer"
@@ -389,7 +502,7 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
                       </button>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           )}
@@ -441,7 +554,7 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
                                className="flex-1 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 active:scale-95 disabled:opacity-50 text-green-700 dark:text-green-400 py-2 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 border border-green-200 dark:border-green-500/20 cursor-pointer"
                              >
                                <CheckCircle2 className="w-4 h-4" /> 
-                               {updatingRequestId === req.id ? 'Accepting...' : 'Accept'}
+                               {updatingRequestId === req.id + '_accepted' ? 'Accepting...' : 'Accept'}
                              </button>
                              <button 
                                onClick={() => handleUpdateRequestStatus(req.id, 'rejected')} 
@@ -449,7 +562,7 @@ const BookRenting: React.FC<Props> = ({ user, onUpdateUser }) => {
                                className="flex-1 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 active:scale-95 disabled:opacity-50 text-red-700 dark:text-red-400 py-2 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2 border border-red-200 dark:border-red-500/20 cursor-pointer"
                              >
                                <XCircle className="w-4 h-4" /> 
-                               {updatingRequestId === req.id ? 'Rejecting...' : 'Reject'}
+                               {updatingRequestId === req.id + '_rejected' ? 'Rejecting...' : 'Reject'}
                              </button>
                            </div>
                          )}
