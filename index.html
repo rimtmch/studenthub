@@ -57,18 +57,7 @@
       <div class="blob blob-3"></div>
     </div>
     <div id="root"></div>
-    <script>
-      // Clean path to HashRouter redirect (e.g. /lost-found -> /#/lost-found)
-      (function() {
-        var pathname = window.location.pathname;
-        if (pathname && pathname !== '/' && !pathname.endsWith('/index.html') && !window.location.hash) {
-          var cleanPath = pathname.replace(/^\/+/, '');
-          if (cleanPath && !cleanPath.includes('.')) {
-            window.location.replace(window.location.origin + window.location.pathname.replace(cleanPath, '') + '#/' + cleanPath);
-          }
-        }
-      })();
-    </script>
+
     <script type="module" src="./index.tsx"></script>
     <script>
       // Service Worker Registration: Seamless Background Updates & Zero-Lag Production PWA

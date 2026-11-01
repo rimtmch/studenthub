@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>RMCH Student Hub</title>
+    <script>
+      // Single Page App redirect for GitHub Pages
+      // If a user navigates to /studenthub/some-path, redirect to /studenthub/#/some-path
+      (function() {
+        var path = window.location.pathname;
+        var repoName = '/studenthub';
+        if (path.startsWith(repoName)) {
+          var subPath = path.slice(repoName.length).replace(/^\/+/, '');
+          window.location.replace(window.location.origin + repoName + '/#/' + subPath + window.location.search);
+        } else {
+          window.location.replace(window.location.origin + repoName + '/');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting to RMCH Student Hub...</p>
+  </body>
+</html>
