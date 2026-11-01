@@ -40,6 +40,10 @@ jobs:
 
       - name: Build Application
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GOOGLE_DRIVE_WEBAPP_URL: ${{ secrets.VITE_GOOGLE_DRIVE_WEBAPP_URL }}
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
