@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>RMCH Student Hub</title>
+    <meta
+      name="description"
+      content="Digital companion for RMCH medical students - smart attendance tracking, peer-to-peer book renting, and digital library."
+    />
+    <meta name="application-name" content="RMCH Hub" />
+
+    <!-- PWA Settings -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f0f9ff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- iOS / Apple PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="RMCH Hub" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
+
+    <!-- PWA Installation Pre-Capture -->
+    <script>
+      window.__pwaInstalled = window.matchMedia('(display-mode: standalone)').matches || ('standalone' in window.navigator && window.navigator.standalone);
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__deferredPWAInstallPrompt = e;
+        window.dispatchEvent(new Event('pwa-installable'));
+      });
+      window.addEventListener('appinstalled', function() {
+        window.__pwaInstalled = true;
+        window.__deferredPWAInstallPrompt = null;
+        window.dispatchEvent(new Event('pwa-installed'));
+      });
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="ambient-light" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div id="root"></div>
+    <script>
+      // Clean path to HashRouter redirect (e.g. /lost-found -> /#/lost-found)
+      (function() {
+        var pathname = window.location.pathname;
+        if (pathname && pathname !== '/' && !pathname.endsWith('/index.html') && !window.location.hash) {
+          var cleanPath = pathname.replace(/^\/+/, '');
+          if (cleanPath && !cleanPath.includes('.')) {
+            window.location.replace(window.location.origin + window.location.pathname.replace(cleanPath, '') + '#/' + cleanPath);
+          }
+        }
+      })();
+    </script>
+    <script type="module" src="./index.tsx"></script>
+    <script>
+      // Service Worker Registration: Seamless Background Updates & Zero-Lag Production PWA
+      if ('serviceWorker' in navigator) {
+        var isDevServer = window.location.port === '5173' || window.location.port === '5174';
+        if (isDevServer) {
+          // Unregister any active service workers on dev ports and purge dev caches to keep HMR instant
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (var i = 0; i < registrations.length; i++) {
+              registrations[i].unregister();
+            }
+          });
+          if ('caches' in window) {
+            caches.keys().then(function(keys) {
+              keys.forEach(function(k) { caches.delete(k); });
+            });
+          }
+        } else {
+          window.addEventListener('load', function() {
+            // Always fetch sw.js bypassing HTTP cache to detect deployments immediately
+            navigator.serviceWorker
+              .register('./sw.js', { scope: './', updateViaCache: 'none' })
+              .then(function(reg) {
+                // Check for updates on every page visit
+                reg.update().catch(function() {});
+                
+                // When an updated service worker is found, activate it automatically
+                reg.onupdatefound = function() {
+                  var installingWorker = reg.installing;
+                  if (installingWorker) {
+                    installingWorker.onstatechange = function() {
+                      if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                      }
+                    };
+                  }
+                };
+              })
+              .catch(function(err) {
+                console.warn('[PWA] Service worker registration error:', err);
+              });
+
+            // When new version takes over, seamlessly refresh once to apply changes without manual hard-refresh
+            var refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+              if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+              }
+            });
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "id": "rmch-student-hub",
+  "name": "RMCH Student Hub",
+  "short_name": "RMCH Hub",
+  "description": "The digital companion for RMCH medical students with attendance tracking, peer-to-peer book renting, and digital library.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "categories": [
+    "education",
+    "medical",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
