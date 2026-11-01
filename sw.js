@@ -1,5 +1,5 @@
 // Production Service Worker for RMCH Student Hub - High-Performance & Cache-Optimized
-const CACHE_NAME = 'rmch-hub-v9';
+const CACHE_NAME = 'rmch-hub-v10';
 
 // Immediate self-cleanup if mistakenly loaded on Vite development server
 if (self.location.port === '5173' || self.location.port === '5174') {
