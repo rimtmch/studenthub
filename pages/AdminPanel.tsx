@@ -5,7 +5,6 @@ import {
   Users,
   MessageCircle,
   Trash2,
-  Key,
   Search,
   AlertTriangle,
   CheckCircle2,
@@ -15,6 +14,7 @@ import {
   LogOut,
   Sparkles,
   UserX,
+  UserCog,
   Eye,
   EyeOff,
 } from 'lucide-react';
@@ -73,9 +73,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
   const [studentSearch, setStudentSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState<'all' | 'MBBS' | 'BDS'>('all');
 
-  // Change Password Modal
+  // Edit Student Modal
   const [selectedStudentForPassword, setSelectedStudentForPassword] = useState<StudentRecord | null>(null);
   const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [editBatchYear, setEditBatchYear] = useState('2024');
+  const [editCourse, setEditCourse] = useState<'MBBS' | 'BDS'>('MBBS');
   const [showPasswordText, setShowPasswordText] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordModalMessage, setPasswordModalMessage] = useState<{ text: string; isError: boolean } | null>(null);
@@ -295,9 +297,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
     }
   };
 
-  // Change Student Password / PIN
+  // Edit Student Details (Batch, Course, Password / PIN)
   const handleSaveStudentPassword = async () => {
-    if (!selectedStudentForPassword || !newPasswordInput.trim()) return;
+    if (!selectedStudentForPassword) return;
     setIsUpdatingPassword(true);
     setPasswordModalMessage(null);
 
@@ -305,17 +307,27 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
     const studentUser = selectedStudentForPassword.username;
 
     try {
-      const updateData: Record<string, string> = { password: cleanPass };
+      const updateData: Record<string, any> = {
+        batch_year: editBatchYear,
+        course: editCourse,
+      };
+      if (cleanPass) {
+        updateData.password = cleanPass;
+        updateData.pin = cleanPass;
+      }
+
       let { error } = await supabase
         .from('profiles')
         .update(updateData)
         .ilike('username', studentUser);
 
-      if (error) {
-        // Fallback with pin column if table uses pin instead of password
+      if (error && (error.message?.includes('batch_year') || error.message?.includes('course') || error.message?.includes('pin'))) {
+        // Fallback if batch_year or pin is missing in schema
+        const fallbackData: Record<string, any> = {};
+        if (cleanPass) fallbackData.password = cleanPass;
         const retryRes = await supabase
           .from('profiles')
-          .update({ pin: cleanPass })
+          .update(fallbackData)
           .ilike('username', studentUser);
         error = retryRes.error;
       }
@@ -326,13 +338,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
       setStudents((prev) =>
         prev.map((s) =>
           s.username.toLowerCase() === studentUser.toLowerCase()
-            ? { ...s, pin: cleanPass, password: cleanPass }
+            ? {
+                ...s,
+                batch_year: editBatchYear,
+                course: editCourse,
+                ...(cleanPass ? { pin: cleanPass, password: cleanPass } : {}),
+              }
             : s
         )
       );
 
       setPasswordModalMessage({
-        text: `Password updated successfully for @${studentUser}!`,
+        text: `Student details updated successfully for @${studentUser}!`,
         isError: false,
       });
 
@@ -343,7 +360,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
       }, 1500);
     } catch (err: any) {
       setPasswordModalMessage({
-        text: `Error updating password: ${getErrorMessage(err)}`,
+        text: `Error updating student: ${getErrorMessage(err)}`,
         isError: true,
       });
     } finally {
@@ -955,15 +972,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
                     <button
                       onClick={() => {
                         setSelectedStudentForPassword(s);
+                        setEditBatchYear(s.batch_year || '2024');
+                        setEditCourse(s.course === 'BDS' ? 'BDS' : 'MBBS');
                         setNewPasswordInput(s.pin || s.password || '');
                         setShowPasswordText(false);
                         setPasswordModalMessage(null);
                       }}
-                      className="px-3.5 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 font-bold text-xs transition border border-blue-500/20 flex items-center gap-1.5"
-                      title="Change user's password"
+                      className="px-3.5 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 font-bold text-xs transition border border-blue-500/20 flex items-center gap-1.5 cursor-pointer"
+                      title="Edit student batch, course & password"
                     >
-                      <Key className="w-3.5 h-3.5" />
-                      <span>Change Password</span>
+                      <UserCog className="w-3.5 h-3.5" />
+                      <span>Edit Student</span>
                     </button>
 
                     {(s.avatar || s.avatar_data) && (
@@ -1000,7 +1019,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
     )}
 
       {/* ========================================================================= */}
-      {/* CHANGE PASSWORD MODAL                                                     */}
+      {/* EDIT STUDENT MODAL (BATCH, COURSE, PASSWORD)                               */}
       {/* ========================================================================= */}
       {selectedStudentForPassword && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
@@ -1008,10 +1027,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-blue-500/15 text-blue-400">
-                  <Key className="w-5 h-5" />
+                  <UserCog className="w-5 h-5" />
                 </span>
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">Change Password</h3>
+                  <h3 className="font-bold text-lg text-slate-900 dark:text-white">Edit Student Details</h3>
                   <p className="text-xs text-slate-400">For student @{selectedStudentForPassword.username}</p>
                 </div>
               </div>
@@ -1031,6 +1050,53 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
                 </div>
               </div>
 
+              {/* Course & Batch Year Selectors */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Course:</label>
+                  <div className="flex rounded-xl bg-slate-100 dark:bg-white/5 p-1 border border-slate-200 dark:border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setEditCourse('MBBS')}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
+                        editCourse === 'MBBS'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      MBBS
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditCourse('BDS')}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition ${
+                        editCourse === 'BDS'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      BDS
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Batch Start Year:</label>
+                  <select
+                    value={editBatchYear}
+                    onChange={(e) => setEditBatchYear(e.target.value)}
+                    aria-label="Batch start year"
+                    className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500/50 cursor-pointer"
+                  >
+                    {['2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'].map((y) => (
+                      <option key={y} value={y} className="text-slate-900 dark:text-white dark:bg-slate-900">
+                        Batch of {y}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Set New Password / PIN:</label>
                 <div className="relative">
@@ -1038,7 +1104,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
                     type={showPasswordText ? 'text' : 'password'}
                     value={newPasswordInput}
                     onChange={(e) => setNewPasswordInput(e.target.value)}
-                    placeholder="Enter new password..."
+                    placeholder="Enter new password (or leave as is)..."
                     className="w-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 pr-10 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500/50"
                   />
                   <button
@@ -1074,11 +1140,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
               </button>
               <button
                 onClick={handleSaveStudentPassword}
-                disabled={isUpdatingPassword || !newPasswordInput.trim()}
-                className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-lg shadow-blue-900/30 flex items-center justify-center gap-1.5"
+                disabled={isUpdatingPassword}
+                className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition shadow-lg shadow-blue-900/30 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                {isUpdatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
-                <span>Save New Password</span>
+                {isUpdatingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                <span>Save Changes</span>
               </button>
             </div>
           </div>
